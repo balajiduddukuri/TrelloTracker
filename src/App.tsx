@@ -5,6 +5,10 @@ import Sidebar from './components/Sidebar';
 import SummaryCards from './components/SummaryCards';
 import TaskTable from './components/TaskTable';
 import TaskDetail from './components/TaskDetail';
+import RetroBoard from './components/RetroBoard';
+import ChatInterface from './components/ChatInterface';
+import ToastProvider, { showToast } from './components/ui/Toast';
+import { AnimatePresence } from 'motion/react';
 import { DashboardSummary, NormalizedTask, TrelloBoard, TrelloMember, TrelloList } from './types';
 import { ThemeType } from './components/ThemeSelector';
 
@@ -12,6 +16,8 @@ export default function App() {
   const [currentTheme, setCurrentTheme] = useState<ThemeType>(() => {
     return (localStorage.getItem('theme') as ThemeType) || 'sleek';
   });
+  const [activeView, setActiveView] = useState<'dashboard' | 'retro'>('dashboard');
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [tasks, setTasks] = useState<NormalizedTask[]>([]);
   const [filters, setFilters] = useState({
@@ -80,9 +86,13 @@ export default function App() {
       const res = await fetch('/api/sync', { method: 'POST' });
       if (res.ok) {
         await fetchData();
+        showToast('Trello backlog synchronized successfully', 'success');
+      } else {
+        showToast('Sync failed. Please check Trello connectivity.', 'error');
       }
     } catch (error) {
       console.error('Sync failed:', error);
+      showToast('Network error during synchronization', 'error');
     } finally {
       setSyncing(false);
     }
@@ -131,7 +141,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-full flex bg-[var(--bg)] overflow-hidden">
+    <div className="h-screen w-full flex bg-[var(--bg)] overflow-hidden transition-colors">
       <Sidebar 
         boards={meta.boards} 
         members={meta.members} 
@@ -140,13 +150,16 @@ export default function App() {
         setFilters={setFilters}
         currentTheme={currentTheme}
         setTheme={setCurrentTheme}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        onOpenChat={() => setIsChatOpen(true)}
       />
 
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <header className="h-16 px-8 border-b border-[var(--border)] bg-white flex items-center justify-between">
+      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+        <header className="h-16 px-8 border-b border-[var(--border)] bg-white flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <span className="text-slate-400 font-medium">Monitoring /</span>
-            <h1 className="text-[15px] font-bold text-slate-800">Task Overview</h1>
+            <h1 className="text-[15px] font-bold text-slate-800 capitalize">{activeView}</h1>
           </div>
 
           <div className="flex items-center gap-6">
@@ -172,20 +185,40 @@ export default function App() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 relative scroll-smooth">
-          <div className="max-w-6xl mx-auto">
-            <SummaryCards summary={summary} />
-            
-            <div className="mb-6 flex items-center justify-between">
-               <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">Backlog Intelligence</h2>
-               <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full">
-                  <Activity size={10} className="text-indigo-500" />
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{tasks.length} Records</span>
-               </div>
-            </div>
+        <div className="flex-1 overflow-y-auto p-8 relative scroll-smooth bg-[var(--bg)]">
+          <AnimatePresence mode="wait">
+            {activeView === 'dashboard' ? (
+              <motion.div
+                key="dashboard"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="max-w-6xl mx-auto"
+              >
+                <SummaryCards summary={summary} />
+                
+                <div className="mb-6 flex items-center justify-between">
+                   <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">Backlog Intelligence</h2>
+                   <div className="flex items-center gap-2 px-3 py-1 bg-slate-200/50 rounded-full">
+                      <Activity size={10} className="text-indigo-500" />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{tasks.length} Records</span>
+                   </div>
+                </div>
 
-            <TaskTable tasks={tasks} onSelectTask={setSelectedTask} />
-          </div>
+                <TaskTable tasks={tasks} onSelectTask={setSelectedTask} loading={loading} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="retro"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="h-full"
+              >
+                <RetroBoard />
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {syncing && (
             <div className="absolute inset-0 bg-slate-50/50 backdrop-blur-[2px] flex items-center justify-center z-10 transition-all">
@@ -205,6 +238,14 @@ export default function App() {
       </main>
 
       <TaskDetail task={selectedTask} onClose={() => setSelectedTask(null)} />
+      
+      <AnimatePresence>
+        {isChatOpen && (
+          <ChatInterface tasks={tasks} onClose={() => setIsChatOpen(false)} />
+        )}
+      </AnimatePresence>
+
+      <ToastProvider />
     </div>
   );
 }

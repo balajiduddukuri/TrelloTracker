@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --font-sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+[data-theme='sleek'] {
+  --bg: #f8fafc;
+  --sidebar-bg: #ffffff;
+  --brand: #6366f1;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --card-bg: #ffffff;
+}
+
+[data-theme='technical'] {
+  --bg: #E4E3E0;
+  --sidebar-bg: #D6D5D2;
+  --brand: #141414;
+  --text-main: #141414;
+  --text-muted: #14141499;
+  --border: #141414;
+  --card-bg: #ffffff;
+}
+
+[data-theme='dark'] {
+  --bg: #0f172a;
+  --sidebar-bg: #1e293b;
+  --brand: #818cf8;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --card-bg: #1e293b;
+}
+
+[data-theme='brutal'] {
+  --bg: #FFFFFF;
+  --sidebar-bg: #FFFFFF;
+  --brand: #00FF00;
+  --text-main: #000000;
+  --text-muted: #000000;
+  --border: #000000;
+  --card-bg: #FFFFFF;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--bg)] text-[var(--text-main)] font-sans antialiased transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .sleek-card {
+    @apply bg-[var(--card-bg)] border border-[var(--border)] rounded-xl p-5 shadow-sm;
+  }
+  
+  .sleek-stat-label {
+    @apply text-[12px] text-[var(--text-muted)] font-semibold uppercase tracking-wider;
+  }
+
+  .sleek-stat-value {
+    @apply text-2xl font-bold text-slate-900;
+  }
+
+  .nav-item-sleek {
+    @apply px-6 py-3 flex items-center text-[var(--text-muted)] text-sm font-medium border-l-3 border-transparent transition-all;
+  }
+
+  .nav-item-sleek.active {
+    @apply bg-slate-100 text-[var(--brand)] border-l-[var(--brand)];
+  }
+
+  .badge-sleek {
+    @apply px-2 py-1 rounded-md text-[11px] font-semibold;
+  }
+}
